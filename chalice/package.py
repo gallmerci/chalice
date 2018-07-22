@@ -138,6 +138,7 @@ class SAMTemplateGenerator(object):
                 reserved_concurrency_config)
         resources[cfn_name] = lambdafunction_definition
         self._add_iam_role(resource, resources[cfn_name])
+        self._add_deployment_config(resource, resources[cfn_name])
 
     def _add_iam_role(self, resource, cfn_resource):
         # type: (models.LambdaFunction, Dict[str, Any]) -> None
@@ -153,6 +154,25 @@ class SAMTemplateGenerator(object):
             # subclass of IAMRole.
             role = cast(models.PreCreatedIAMRole, role)
             cfn_resource['Properties']['Role'] = role.role_arn
+
+    def _add_deployment_config(self, resource, cfn_resource):
+        deployment_pref = {
+            'Type': 'Linear10PercentEvery1Minute',
+            # 'Alarms': [
+                # A list of alarms that you want to monitor
+            #    '!Ref AliasErrorMetricGreaterThanZeroAlarm',
+            #    '!Ref LatestVersionErrorMetricGreaterThanZeroAlarm'
+            #    ],
+            #'Hooks': {
+                # Validation Lambda functions that are run before & after traffic shifting
+            #    'PreTraffic': '!Ref PreTrafficLambdaFunction',
+            #    'PostTraffic': '!Ref PostTrafficLambdaFunction'
+            #}
+        }
+
+        cfn_resource['Properties']['AutoPublishAlias'] = 'live'
+        cfn_resource['Properties']['DeploymentPreference'] = deployment_pref
+
 
     def _generate_restapi(self, resource, template):
         # type: (models.RestAPI, Dict[str, Any]) -> None
