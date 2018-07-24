@@ -263,6 +263,13 @@ class Config(object):
                                   varies_per_function=True)
 
     @property
+    def deployment_preference(self):
+        # type: () -> Dict[str, str]
+        return self._chain_lookup('deployment_preference',
+                                  varies_per_chalice_stage=True,
+                                  varies_per_function=True)
+
+    @property
     def environment_variables(self):
         # type: () -> Dict[str, str]
         return self._chain_merge('environment_variables')

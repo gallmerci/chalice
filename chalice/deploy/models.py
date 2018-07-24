@@ -106,6 +106,29 @@ class DeploymentPackage(Model):
 
 
 @attrs
+class DeploymentPreference(Model):
+    pass
+
+
+@attrs
+class NoDeploymentPreference(DeploymentPreference):
+    pass
+
+
+@attrs
+class SimpleDeploymentPreference(DeploymentPreference):
+    auto_publish_alias = attrib()  # type: str
+    type = attrib()  # type: str
+    # alarms = attrib()   # type: List[Alarms]
+    # pre_traffic = attrib()  # type: LambdaFunction
+    # post_traffic = attrib()  # type: LambdaFunction
+
+    # def dependencies(self):
+    # type: () -> List[Model]
+    # return self.alarms + [self.pre_traffic, self.post_traffic]
+
+
+@attrs
 class IAMPolicy(Model):
     document = attrib()  # type: DV[Dict[str, Any]]
 
@@ -147,6 +170,7 @@ class LambdaFunction(ManagedModel):
     resource_type = 'lambda_function'
     function_name = attrib()          # type: str
     deployment_package = attrib()     # type: DeploymentPackage
+    deployment_preference = attrib()  # type: DeploymentPreference
     environment_variables = attrib()  # type: STR_MAP
     runtime = attrib()                # type: str
     handler = attrib()                # type: str
@@ -160,7 +184,10 @@ class LambdaFunction(ManagedModel):
 
     def dependencies(self):
         # type: () -> List[Model]
-        return [self.role, self.deployment_package]
+        if self.deployment_preference is None:
+            return [self.role, self.deployment_package]
+        else:
+            return [self.role, self.deployment_package]  # TODO
 
 
 @attrs

@@ -497,11 +497,34 @@ class ApplicationGraphBuilder(object):
         )
         role = self._get_role_reference(
             new_config, stage_name, name)
+        deploy_preference = self._get_deploy_preference(
+            new_config, stage_name, name
+        )
         resource = self._build_lambda_function(
             new_config, name, handler_name,
-            deployment, role
+            deployment, deploy_preference, role
         )
         return resource
+
+    def _get_deploy_preference(self, config, stage_name, function_name):
+        # type: (Config, str, str) -> models.DeploymentPreference
+        preference = self._create_deploy_preference(config, stage_name,
+                                                    function_name)
+        return preference
+
+    def _create_deploy_preference(self, config, stage_name, function_name):
+        # type: (Config, str, str) -> models.DeploymentPreference
+        # First option, the user doesn't want us to manage
+        # the role at all.
+        if not config.deployment_preference:
+            return models.NoDeploymentPreference()
+        deploy_preference = config.deployment_preference
+        if 'auto_publish_alias' in deploy_preference and 'type' in deploy_preference:
+            return models.SimpleDeploymentPreference(
+                auto_publish_alias=deploy_preference['auto_publish_alias'],
+                type=deploy_preference['type'],
+            )
+        return models.NoDeploymentPreference()
 
     def _get_role_reference(self, config, stage_name, function_name):
         # type: (Config, str, str) -> models.IAMRole
@@ -586,6 +609,7 @@ class ApplicationGraphBuilder(object):
                                name,          # type: str
                                handler_name,  # type: str
                                deployment,    # type: models.DeploymentPackage
+                               deployment_preference,  # type: models.DeploymentPreference
                                role,          # type: models.IAMRole
                                ):
         # type: (...) -> models.LambdaFunction
@@ -606,6 +630,7 @@ class ApplicationGraphBuilder(object):
             security_group_ids=security_group_ids,
             subnet_ids=subnet_ids,
             reserved_concurrency=config.reserved_concurrency,
+            deployment_preference=deployment_preference
         )
         self._inject_role_traits(function, role)
         return function

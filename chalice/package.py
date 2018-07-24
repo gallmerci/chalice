@@ -156,23 +156,13 @@ class SAMTemplateGenerator(object):
             cfn_resource['Properties']['Role'] = role.role_arn
 
     def _add_deployment_config(self, resource, cfn_resource):
-        deployment_pref = {
-            'Type': 'Linear10PercentEvery1Minute',
-            # 'Alarms': [
-                # A list of alarms that you want to monitor
-            #    '!Ref AliasErrorMetricGreaterThanZeroAlarm',
-            #    '!Ref LatestVersionErrorMetricGreaterThanZeroAlarm'
-            #    ],
-            #'Hooks': {
-                # Validation Lambda functions that are run before & after traffic shifting
-            #    'PreTraffic': '!Ref PreTrafficLambdaFunction',
-            #    'PostTraffic': '!Ref PostTrafficLambdaFunction'
-            #}
-        }
-
-        cfn_resource['Properties']['AutoPublishAlias'] = 'live'
-        cfn_resource['Properties']['DeploymentPreference'] = deployment_pref
-
+        # type: (models.LambdaFunction, Dict[str, Any]) -> None
+        deploy_preference = resource.deployment_preference
+        if isinstance(deploy_preference, models.SimpleDeploymentPreference):
+            cfn_resource['Properties']['AutoPublishAlias'] = deploy_preference.auto_publish_alias
+            cfn_resource['Properties']['DeploymentPreference'] = {
+                "Type": deploy_preference.type
+            }
 
     def _generate_restapi(self, resource, template):
         # type: (models.RestAPI, Dict[str, Any]) -> None
