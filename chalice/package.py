@@ -159,7 +159,8 @@ class SAMTemplateGenerator(object):
         # type: (models.LambdaFunction, Dict[str, Any]) -> None
         deploy_preference = resource.deployment_preference
         if isinstance(deploy_preference, models.SimpleDeploymentPreference):
-            cfn_resource['Properties']['AutoPublishAlias'] = deploy_preference.auto_publish_alias
+            cfn_resource['Properties']['AutoPublishAlias'] = \
+                deploy_preference.auto_publish_alias
             cfn_resource['Properties']['DeploymentPreference'] = {
                 "Type": deploy_preference.type
             }

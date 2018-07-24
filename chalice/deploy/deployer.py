@@ -519,7 +519,8 @@ class ApplicationGraphBuilder(object):
         if not config.deployment_preference:
             return models.NoDeploymentPreference()
         deploy_preference = config.deployment_preference
-        if 'auto_publish_alias' in deploy_preference and 'type' in deploy_preference:
+        if 'auto_publish_alias' in deploy_preference \
+                and 'type' in deploy_preference:
             return models.SimpleDeploymentPreference(
                 auto_publish_alias=deploy_preference['auto_publish_alias'],
                 type=deploy_preference['type'],
@@ -604,14 +605,15 @@ class ApplicationGraphBuilder(object):
                                             security_group_ids)
             )
 
-    def _build_lambda_function(self,
-                               config,        # type: Config
-                               name,          # type: str
-                               handler_name,  # type: str
-                               deployment,    # type: models.DeploymentPackage
-                               deployment_preference,  # type: models.DeploymentPreference
-                               role,          # type: models.IAMRole
-                               ):
+    def _build_lambda_function(
+        self,
+        config,                 # type: Config
+        name,                   # type: str
+        handler_name,           # type: str
+        deployment,             # type: models.DeploymentPackage
+        deployment_preference,  # type: models.DeploymentPreference
+        role,                   # type: models.IAMRole
+    ):
         # type: (...) -> models.LambdaFunction
         function_name = '%s-%s-%s' % (
             config.app_name, config.chalice_stage, name)

@@ -119,13 +119,6 @@ class NoDeploymentPreference(DeploymentPreference):
 class SimpleDeploymentPreference(DeploymentPreference):
     auto_publish_alias = attrib()  # type: str
     type = attrib()  # type: str
-    # alarms = attrib()   # type: List[Alarms]
-    # pre_traffic = attrib()  # type: LambdaFunction
-    # post_traffic = attrib()  # type: LambdaFunction
-
-    # def dependencies(self):
-    # type: () -> List[Model]
-    # return self.alarms + [self.pre_traffic, self.post_traffic]
 
 
 @attrs
@@ -184,10 +177,7 @@ class LambdaFunction(ManagedModel):
 
     def dependencies(self):
         # type: () -> List[Model]
-        if self.deployment_preference is None:
-            return [self.role, self.deployment_package]
-        else:
-            return [self.role, self.deployment_package]  # TODO
+        return [self.role, self.deployment_package]
 
 
 @attrs

@@ -17,7 +17,7 @@ def create_function_resource(name, function_name=None,
                              runtime='python2.7', handler='app.app',
                              tags=None, timeout=60,
                              memory_size=128, deployment_package=None,
-                             role=None):
+                             deployment_preference=None, role=None):
     if function_name is None:
         function_name = 'appname-dev-%s' % name
     if environment_variables is None:
@@ -28,6 +28,8 @@ def create_function_resource(name, function_name=None,
         deployment_package = models.DeploymentPackage(filename='foo')
     if role is None:
         role = models.PreCreatedIAMRole(role_arn='role:arn')
+    if deployment_preference is None:
+        deployment_preference = models.NoDeploymentPreference()
     return models.LambdaFunction(
         resource_name=name,
         function_name=function_name,
@@ -42,6 +44,7 @@ def create_function_resource(name, function_name=None,
         security_group_ids=[],
         subnet_ids=[],
         reserved_concurrency=None,
+        deployment_preference=deployment_preference
     )
 
 
