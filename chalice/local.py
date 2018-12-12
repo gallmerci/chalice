@@ -125,7 +125,7 @@ class RouteMatcher(object):
         # Otherwise we need to check for param substitution
         parsed_url = urlparse(url)
         parsed_qs = parse_qs(parsed_url.query, keep_blank_values=True)
-        query_params = {k: v[0] for k, v in parsed_qs.items()}
+        query_params = {k: v[-1] for k, v in parsed_qs.items()}
         path = parsed_url.path
         # API Gateway removes the trailing slash if the route is not the root
         # path. We do the same here so our route matching works the same way.
@@ -576,6 +576,8 @@ class ChaliceRequestHandler(BaseHTTPRequestHandler):
     def _send_http_response_with_body(self, code, headers, body):
         # type: (int, HeaderType, Union[str,bytes]) -> None
         self.send_response(code)
+        if not isinstance(body, bytes):
+            body = body.encode('utf-8')
         self.send_header('Content-Length', str(len(body)))
         content_type = headers.pop(
             'Content-Type', 'application/json')
@@ -583,8 +585,6 @@ class ChaliceRequestHandler(BaseHTTPRequestHandler):
         for header_name, header_value in headers.items():
             self.send_header(header_name, header_value)
         self.end_headers()
-        if not isinstance(body, bytes):
-            body = body.encode('utf-8')
         self.wfile.write(body)
 
     do_GET = do_PUT = do_POST = do_HEAD = do_DELETE = do_PATCH = do_OPTIONS = \

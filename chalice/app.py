@@ -1,5 +1,5 @@
 """Chalice app and routing code."""
-# pylint: disable=too-many-lines
+# pylint: disable=too-many-lines,ungrouped-imports
 import re
 import sys
 import os
@@ -8,10 +8,10 @@ import json
 import traceback
 import decimal
 import base64
-from collections import defaultdict, Mapping
+from collections import defaultdict
 
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 _PARAMS = re.compile(r'{\w+}')
 
 # Implementation note:  This file is intended to be a standalone file
@@ -21,6 +21,7 @@ _PARAMS = re.compile(r'{\w+}')
 # directly in this file instead of copying over compat.py
 try:
     from urllib.parse import unquote_plus
+    from collections.abc import Mapping
 
     unquote_str = unquote_plus
 
@@ -29,6 +30,7 @@ try:
     _ANY_STRING = (str, bytes)
 except ImportError:
     from urllib import unquote_plus
+    from collections import Mapping
 
     # This is borrowed from botocore/compat.py
     def unquote_str(value, encoding='utf-8'):
@@ -276,6 +278,7 @@ class CORSConfig(object):
         if isinstance(other, self.__class__):
             return self.get_access_control_headers() == \
                 other.get_access_control_headers()
+        return False
 
 
 class Request(object):
@@ -345,7 +348,8 @@ class Response(object):
     def to_dict(self, binary_types=None):
         body = self.body
         if not isinstance(body, _ANY_STRING):
-            body = json.dumps(body, default=handle_decimals)
+            body = json.dumps(body, separators=(',', ':'),
+                              default=handle_decimals)
         response = {
             'headers': self.headers,
             'statusCode': self.status_code,
@@ -367,7 +371,8 @@ class Response(object):
                 # json serialization results in a string type, but for binary
                 # content types we need a type bytes().  So we need to special
                 # case this scenario and encode the JSON body to bytes().
-                body = body.encode('utf-8')
+                body = body if isinstance(body, bytes) \
+                    else body.encode('utf-8')
             body = self._base64encode(body)
             response_dict['isBase64Encoded'] = True
         response_dict['body'] = body
@@ -733,7 +738,7 @@ class Chalice(object):
             response = Response(body={'Code': e.__class__.__name__,
                                       'Message': str(e)},
                                 status_code=e.STATUS_CODE)
-        except Exception as e:
+        except Exception:
             headers = {}
             if self.debug:
                 # If the user has turned on debug mode,
@@ -745,6 +750,8 @@ class Chalice(object):
                 body = stack_trace
                 headers['Content-Type'] = 'text/plain'
             else:
+                self.log.error("Internal Error for %s", view_function,
+                               exc_info=True)
                 body = {'Code': 'InternalServerError',
                         'Message': 'An internal server error occurred.'}
             response = Response(body=body, headers=headers, status_code=500)
@@ -875,7 +882,7 @@ class AuthResponse(object):
         # '/'.join(...)'d properly.
         base.extend([method, route[1:]])
         last_arn_segment = '/'.join(base)
-        if route == '/' or route == '*':
+        if route in ['/', '*']:
             # We have to special case the '/' case.  For whatever
             # reason, API gateway adds an extra '/' to the method_arn
             # of the auth request, so we need to do the same thing.

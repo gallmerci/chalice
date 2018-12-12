@@ -2,6 +2,31 @@
 CHANGELOG
 =========
 
+Next Release (TBD)
+==================
+
+* Add support for python3.7
+  (`#992 <https://github.com/aws/chalice/pull/992>`__)
+* Support bytes for the application/json binary type
+  (`#988 <https://github.com/aws/chalice/issues/988>`__)
+* Use more compact JSON representation by default for dicts
+  (`#958 <https://github.com/aws/chalice/pull/958>`__)
+* Log internal exceptions as errors
+  (`#254 <https://github.com/aws/chalice/issues/254>`__)
+
+
+1.6.1
+=====
+
+* Fix local mode issue with unicode responses and Content-Length
+  (`#910 <https://github.com/aws/chalice/pull/910>`__)
+* Fix issue with ``requirements-dev.txt`` not setting up a working
+  dev environment
+  (`#920 <https://github.com/aws/chalice/pull/920>`__)
+* Add support for pip 18
+  (`#910 <https://github.com/aws/chalice/pull/908>`__)
+
+
 1.6.0
 =====
 

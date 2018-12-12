@@ -16,9 +16,9 @@ class RoleTraits(enum.Enum):
     VPC_NEEDED = 'vpc_needed'
 
 
-T = TypeVar('T')
-DV = Union[Placeholder, T]
-STR_MAP = Dict[str, str]
+Type = TypeVar('Type')
+DV = Union[Placeholder, Type]
+StrMap = Dict[str, str]
 
 
 @attrs
@@ -164,10 +164,10 @@ class LambdaFunction(ManagedModel):
     function_name = attrib()          # type: str
     deployment_package = attrib()     # type: DeploymentPackage
     deployment_preference = attrib()  # type: DeploymentPreference
-    environment_variables = attrib()  # type: STR_MAP
+    environment_variables = attrib()  # type: StrMap
     runtime = attrib()                # type: str
     handler = attrib()                # type: str
-    tags = attrib()                   # type: STR_MAP
+    tags = attrib()                   # type: StrMap
     timeout = attrib()                # type: int
     memory_size = attrib()            # type: int
     role = attrib()                   # type: IAMRole

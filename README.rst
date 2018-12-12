@@ -46,7 +46,7 @@ Tasks that run on a periodic basis:
 
     # Automatically runs every 5 minutes
     @app.schedule(Rate(5, unit=Rate.MINUTES))
-    def periodic_task():
+    def periodic_task(event):
         return {"hello": "world"}
 
 
@@ -58,7 +58,7 @@ You can connect a lambda function to an S3 event:
 
     app = Chalice(app_name="helloworld")
 
-    # Whenver an object is uploaded to 'mybucket'
+    # Whenever an object is uploaded to 'mybucket'
     # this lambda function will be invoked.
 
     @app.on_s3_event(bucket='mybucket')
@@ -776,6 +776,45 @@ This will result in a plain text response body::
     hello world!
 
 
+Tutorial: GZIP compression for json
+===================================
+The return value from a chalice view function is serialized as JSON as the
+response body returned back to the caller.  This makes it easy to create
+rest APIs that return JSON response bodies.
+
+Chalice allows you to control this behavior by returning an instance of
+a chalice specific ``Response`` class.  This behavior allows you to:
+
+* Add ``application/json`` to binary_types
+* Specify the status code to return
+* Specify custom header ``Content-Type: application/json``
+* Specify custom header ``Content-Encoding: gzip``
+
+Here's an example of this:
+
+.. code-block:: python
+
+    import json
+    import gzip
+    from chalice import Chalice, Response
+
+    app = Chalice(app_name='compress-response')
+    app.api.binary_types.append('application/json')
+
+    @app.route('/')
+    def index():
+        blob = json.dumps({'hello': 'world'}).encode('utf-8')
+        payload = gzip.compress(blob)
+        custom_headers = {
+            'Content-Type': 'application/json',
+            'Content-Encoding': 'gzip'
+        }
+        return Response(body=payload,
+                        status_code=200,
+                        headers=custom_headers)
+
+
+
 Tutorial: CORS Support
 ======================
 
@@ -854,7 +893,7 @@ There's a couple of things to keep in mind when enabling cors for a view:
   in the ``Access-Control-Allow-Origin`` header.
 
   Example:
-  
+
 .. code-block:: python
 
     from chalice import Chalice, Response
@@ -862,22 +901,29 @@ There's a couple of things to keep in mind when enabling cors for a view:
     app = Chalice(app_name='multipleorigincors')
 
     _ALLOWED_ORIGINS = set([
-        'http://allowed1.example.com',
-        'http://allowed2.example.com',
+	'http://allowed1.example.com',
+	'http://allowed2.example.com',
     ])
 
 
-    @app.route('/cors_multiple_origins', methods=['GET'])
+    @app.route('/cors_multiple_origins', methods=['GET', 'OPTIONS'])
     def supports_cors_multiple_origins():
-        origin = app.current_request.to_dict()['headers'].get('origin', '')
-        if origin in _ALLOWED_ORIGINS:
-            return Response(
-                body='You sent a whitelisted origin!\n',
-                headers={
-                    'Access-Control-Allow-Origin': origin
-                })
-        else:
-            return "The origin you sent has not been whitelisted: %s\n" % origin
+	method = app.current_request.method
+	if method == 'OPTIONS':
+	    headers = {
+		'Access-Control-Allow-Method': 'GET,OPTIONS',
+		'Access-Control-Allow-Origin': ','.join(_ALLOWED_ORIGINS),
+		'Access-Control-Allow-Headers': 'X-Some-Header',
+	    }
+	    origin = app.current_request.headers.get('origin', '')
+	    if origin in _ALLOWED_ORIGINS:
+		headers.update({'Access-Control-Allow-Origin': origin})
+	    return Response(
+		body=None,
+		headers=headers,
+	    )
+	elif method == 'GET':
+	    return 'Foo'
 
 * Every view function must explicitly enable CORS support.
 
@@ -1102,7 +1148,7 @@ to the URI of your lambda function.
 
     authorizer = CustomAuthorizer(
         'MyCustomAuth', header='Authorization',
-        authorizer_uri=('arn:aws:apigateway:region:lambda:path/2015-03-01'
+        authorizer_uri=('arn:aws:apigateway:region:lambda:path/2015-03-31'
                         '/functions/arn:aws:lambda:region:account-id:'
                         'function:FunctionName/invocations'))
 
@@ -1170,10 +1216,9 @@ Similar to the ``chalice deploy`` command, you can specify which
 chalice stage to delete.  By default it will delete the ``dev`` stage::
 
     $ chalice delete --stage dev
-    Deleting rest API duvw4kwyl3
-    Deleting lambda function helloworld-dev
-    Delete the role helloworld-dev? [y/N]: y
-    Deleting role name helloworld-dev
+    Deleting Rest API: duvw4kwyl3
+    Deleting function aws:arn:lambda:region:123456789:helloworld-dev
+    Deleting IAM Role helloworld-dev
 
 .. quick-start-end
 

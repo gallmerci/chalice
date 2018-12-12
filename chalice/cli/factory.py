@@ -29,19 +29,18 @@ from chalice.invoke import LambdaInvoker
 from chalice.invoke import LambdaResponseFormatter
 
 
-_OPT_STR = Optional[str]
-_OPT_INT = Optional[int]
+OptStr = Optional[str]
+OptInt = Optional[int]
 
 
 def create_botocore_session(profile=None, debug=False,
                             connection_timeout=None,
                             read_timeout=None,
                             max_retries=None):
-    # type: (_OPT_STR, bool, _OPT_INT, _OPT_INT, _OPT_INT) -> Session
+    # type: (OptStr, bool, OptInt, OptInt, OptInt) -> Session
     s = Session(profile=profile)
     _add_chalice_user_agent(s)
     if debug:
-        s.set_debug_logger('')
         _inject_large_request_body_filter()
     config_args = {}  # type: Dict[str, Any]
     if connection_timeout is not None:
@@ -115,7 +114,7 @@ class CLIFactory(object):
 
     def create_botocore_session(self, connection_timeout=None,
                                 read_timeout=None, max_retries=None):
-        # type: (_OPT_INT, _OPT_INT, _OPT_INT) -> Session
+        # type: (OptInt, OptInt, OptInt) -> Session
         return create_botocore_session(profile=self.profile,
                                        debug=self.debug,
                                        connection_timeout=connection_timeout,

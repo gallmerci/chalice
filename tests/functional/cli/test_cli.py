@@ -1,6 +1,8 @@
 import json
 import zipfile
 import os
+import sys
+import re
 
 import pytest
 from click.testing import CliRunner
@@ -149,6 +151,17 @@ def test_can_package_with_single_file(runner):
             assert sorted(f.namelist()) == ['deployment.zip', 'sam.json']
 
 
+def test_debug_flag_enables_logging(runner):
+    with runner.isolated_filesystem():
+        cli.create_new_project_skeleton('testproject')
+        os.chdir('testproject')
+        result = runner.invoke(
+            cli.cli, ['--debug', 'package', 'outdir'], obj={})
+        assert result.exit_code == 0
+        assert re.search('[DEBUG].*Creating deployment package',
+                         result.output) is not None
+
+
 def test_does_deploy_with_default_api_gateway_stage_name(runner,
                                                          mock_cli_factory):
     with runner.isolated_filesystem():
@@ -245,6 +258,8 @@ def test_error_when_no_deployed_record(runner, mock_cli_factory):
         assert 'not find' in result.output
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 7),
+                    reason="Cannot generate pipeline for python3.7.")
 def test_can_generate_pipeline_for_all(runner):
     with runner.isolated_filesystem():
         cli.create_new_project_skeleton('testproject')

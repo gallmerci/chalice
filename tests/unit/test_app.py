@@ -2,6 +2,7 @@ import sys
 import base64
 import logging
 import json
+import gzip
 
 import pytest
 from pytest import fixture
@@ -171,7 +172,7 @@ def test_can_encode_binary_json(sample_app):
         headers={'Content-Type': 'application/json'}
     )
     encoded_response = response.to_dict(sample_app.api.binary_types)
-    assert encoded_response['body'] == 'eyJmb28iOiAiYmFyIn0='
+    assert encoded_response['body'] == 'eyJmb28iOiJiYXIifQ=='
 
 
 def test_can_parse_route_view_args():
@@ -510,7 +511,7 @@ def test_can_return_response_object(create_event):
 
     event = create_event('/index', 'GET', {})
     response = demo(event, context=None)
-    assert response == {'statusCode': 200, 'body': '{"foo": "bar"}',
+    assert response == {'statusCode': 200, 'body': '{"foo":"bar"}',
                         'headers': {'Content-Type': 'application/json'}}
 
 
@@ -851,7 +852,7 @@ class TestCORSConfig(object):
     def test_not_eq_different_type(self):
         cors_config = app.CORSConfig()
         different_type_obj = object()
-        assert cors_config != different_type_obj
+        assert not cors_config == different_type_obj
 
     def test_not_eq_differing_configurations(self):
         cors_config = app.CORSConfig()
@@ -1314,6 +1315,21 @@ def test_debug_mode_changes_log_level():
     assert test_app.log.getEffectiveLevel() == logging.DEBUG
 
 
+def test_internal_exception_debug_false(capsys, create_event):
+    test_app = app.Chalice('logger-test-5', debug=False)
+
+    @test_app.route('/error')
+    def error():
+        raise Exception('Something bad happened')
+
+    event = create_event('/error', 'GET', {})
+    test_app(event, context=None)
+    out, err = capsys.readouterr()
+    assert 'logger-test-5' in out
+    assert 'Internal Error' in out
+    assert 'Something bad happened' in out
+
+
 def test_raw_body_is_none_if_body_is_none():
     misc_kwargs = {
         'query_params': {},
@@ -1574,3 +1590,20 @@ def test_can_map_sqs_event(sample_app):
     assert first_record.receipt_handle == 'receipt-handle'
     assert first_record.to_dict() == sqs_event['Records'][0]
     assert actual_event.to_dict() == sqs_event
+
+
+def test_bytes_when_binary_type_is_application_json():
+    demo = app.Chalice('demo-app')
+    demo.api.binary_types.append('application/json')
+
+    @demo.route('/compress_response')
+    def index():
+        blob = json.dumps({'hello': 'world'}).encode('utf-8')
+        payload = gzip.compress(blob)
+        custom_headers = {
+            'Content-Type': 'application/json',
+            'Content-Encoding': 'gzip'
+        }
+        return Response(body=payload, status_code=200, headers=custom_headers)
+
+    return demo
