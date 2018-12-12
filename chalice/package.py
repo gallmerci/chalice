@@ -138,7 +138,7 @@ class SAMTemplateGenerator(object):
                 reserved_concurrency_config)
         resources[cfn_name] = lambdafunction_definition
         self._add_iam_role(resource, resources[cfn_name])
-        self._add_deployment_config(resource, resources[cfn_name])
+        self._add_deployment_config(resource, resources[cfn_name], template)
 
     def _add_iam_role(self, resource, cfn_resource):
         # type: (models.LambdaFunction, Dict[str, Any]) -> None
@@ -155,15 +155,62 @@ class SAMTemplateGenerator(object):
             role = cast(models.PreCreatedIAMRole, role)
             cfn_resource['Properties']['Role'] = role.role_arn
 
-    def _add_deployment_config(self, resource, cfn_resource):
-        # type: (models.LambdaFunction, Dict[str, Any]) -> None
+    def _add_deployment_config(self, resource, cfn_resource, template):
+        # type: (models.LambdaFunction, Dict[str, Any], Dict[str, Any]) -> None
         deploy_preference = resource.deployment_preference
         if isinstance(deploy_preference, models.SimpleDeploymentPreference):
+            alarms = self._generate_deployment_alarms(resource, template)
             cfn_resource['Properties']['AutoPublishAlias'] = \
                 deploy_preference.auto_publish_alias
             cfn_resource['Properties']['DeploymentPreference'] = {
-                "Type": deploy_preference.type
+                "Type": deploy_preference.type,
+                "Alarms": [{'Ref': alarm} for alarm in alarms]
             }
+
+    def _generate_deployment_alarms(self, resource, template):
+        # type: (models.LambdaFunction, Dict[str, Any]) -> List[str]
+        deploy_preference = resource.deployment_preference
+        alarm_resources = []
+        if isinstance(deploy_preference, models.SimpleDeploymentPreference):
+            resources = template['Resources']
+            function_name = to_cfn_resource_name(resource.resource_name)
+            for alarm in deploy_preference.alarms:
+                target = 'LatestVersion' if alarm.with_version else 'Alias'
+                cfn_resource_name = to_cfn_resource_name(
+                    function_name + target + 'ErrorOccurredAlarm')
+                dimensions = [{
+                    'Name': 'Resource',
+                    'Value': {
+                        'Fn::Sub': ["${MyLambdaFunction}:live"]
+                    }
+                }, {
+                    'Name': 'FunctionName',
+                    'Value': {'Ref': function_name
+                    }
+                }]
+                if alarm.with_version:
+                    dimensions.append({
+                        'Name': 'ExecutedVersion',
+                        'Value': {'Fn::GetAtt': [function_name, 'Version',
+                                                 'Version']
+                                  }
+                    })
+                resources[cfn_resource_name] = {
+                    'Type': 'AWS::CloudWatch::Alarm',
+                    'Properties': {
+                        'AlarmDescription': 'Lambda Function Error > 0',
+                        'ComparisonOperator': 'GreaterThanThreshold',
+                        'Dimensions': dimensions,
+                        'EvaluationPeriods': 2,
+                        'MetricName': 'Errors',
+                        'Namespace': 'AWS/Lambda',
+                        'Period': 60,
+                        'Statistic': 'Sum',
+                        'Threshold': 0
+                    }
+                }
+                alarm_resources.append(cfn_resource_name)
+        return alarm_resources
 
     def _generate_restapi(self, resource, template):
         # type: (models.RestAPI, Dict[str, Any]) -> None

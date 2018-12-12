@@ -101,6 +101,11 @@ class Application(Model):
 
 
 @attrs
+class CloudWatchDeploymentAlarm(Model):
+    with_version = attrib()   # type: bool
+
+
+@attrs
 class DeploymentPackage(Model):
     filename = attrib()  # type: DV[str]
 
@@ -117,8 +122,9 @@ class NoDeploymentPreference(DeploymentPreference):
 
 @attrs
 class SimpleDeploymentPreference(DeploymentPreference):
-    auto_publish_alias = attrib()  # type: str
-    type = attrib()  # type: str
+    auto_publish_alias = attrib()   # type: str
+    type = attrib()                 # type: str
+    alarms = attrib()               # type: List[CloudWatchDeploymentAlarm]
 
 
 @attrs

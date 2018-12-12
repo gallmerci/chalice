@@ -104,6 +104,7 @@ from chalice.constants import MAX_LAMBDA_DEPLOYMENT_SIZE, VPC_ATTACH_POLICY, \
     SQS_EVENT_SOURCE_POLICY
 from chalice.deploy import models
 from chalice.deploy.executor import Executor
+from chalice.deploy.models import CloudWatchDeploymentAlarm
 from chalice.deploy.packager import PipRunner, SubprocessPip, \
     DependencyBuilder as PipDependencyBuilder, LambdaDeploymentPackager
 from chalice.deploy.planner import PlanStage, RemoteState, \
@@ -383,6 +384,10 @@ class ApplicationGraphBuilder(object):
             rest_api = self._create_rest_api_model(
                 config, deployment, stage_name)
             resources.append(rest_api)
+        if config.deployment_preference:
+            cloudwatch_alarms = self._create_cloudwatch_alarm_resources(
+
+            )
         return models.Application(stage_name, resources)
 
     def _create_lambda_event_resources(self, config, deployment, stage_name):
@@ -524,6 +529,8 @@ class ApplicationGraphBuilder(object):
             return models.SimpleDeploymentPreference(
                 auto_publish_alias=deploy_preference['auto_publish_alias'],
                 type=deploy_preference['type'],
+                alarms=[CloudWatchDeploymentAlarm(with_version=False),
+                        CloudWatchDeploymentAlarm(with_version=True)]
             )
         return models.NoDeploymentPreference()
 
