@@ -384,10 +384,6 @@ class ApplicationGraphBuilder(object):
             rest_api = self._create_rest_api_model(
                 config, deployment, stage_name)
             resources.append(rest_api)
-        if config.deployment_preference:
-            cloudwatch_alarms = self._create_cloudwatch_alarm_resources(
-
-            )
         return models.Application(stage_name, resources)
 
     def _create_lambda_event_resources(self, config, deployment, stage_name):
