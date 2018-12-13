@@ -181,7 +181,8 @@ class SAMTemplateGenerator(object):
                 dimensions = [{
                     'Name': 'Resource',
                     'Value': {
-                        'Fn::Sub': "${MyLambdaFunction}:live"
+                        'Fn::Sub': "${" + function_name + "}:" +
+                                   deploy_preference.auto_publish_alias
                     }
                 }, {
                     'Name': 'FunctionName',
