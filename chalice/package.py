@@ -191,7 +191,7 @@ class SAMTemplateGenerator(object):
                 if alarm.with_version:
                     dimensions.append({
                         'Name': 'ExecutedVersion',
-                        'Value': {'Fn::GetAtt': ['APIHandler', 'Version']}
+                        'Value': {'Fn::GetAtt': ['APIHandler.Version', 'Version']}
                     })
                 resources[cfn_resource_name] = {
                     'Type': 'AWS::CloudWatch::Alarm',
