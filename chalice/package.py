@@ -191,8 +191,7 @@ class SAMTemplateGenerator(object):
                 if alarm.with_version:
                     dimensions.append({
                         'Name': 'ExecutedVersion',
-                        'Value': {'Fn::GetAtt': [function_name, 'Version',
-                                                 'Version']
+                        'Value': {'Fn::GetAtt': [function_name, 'Version']
                                   }
                     })
                 resources[cfn_resource_name] = {
