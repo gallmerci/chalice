@@ -181,13 +181,12 @@ class SAMTemplateGenerator(object):
                 dimensions = [{
                     'Name': 'Resource',
                     'Value': {
-                        'Fn::Sub': "${" + function_name + "}:" +
+                        'Fn::Sub': "${APIHandler}:" +
                                    deploy_preference.auto_publish_alias
                     }
                 }, {
                     'Name': 'FunctionName',
-                    'Value': {'Ref': function_name
-                    }
+                    'Value': {'Ref': 'APIHandler'}
                 }]
                 if alarm.with_version:
                     dimensions.append({
