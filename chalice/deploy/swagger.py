@@ -234,16 +234,21 @@ class SwaggerGenerator(object):
 
 
 class CFNSwaggerGenerator(SwaggerGenerator):
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, config=None):
+        # type: (Config) -> None
+        self._config = config
 
     def _uri(self, lambda_arn=None):
         # type: (Optional[str]) -> Any
+        alias = ''
+        if self._config:
+            deploy_preference = self._config.deployment_preference
+            if 'auto_publish_alias' in deploy_preference:
+                alias = ':' + deploy_preference['auto_publish_alias']
         return {
             'Fn::Sub': (
                 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31'
-                '/functions/${APIHandler.Arn}/invocations'
+                '/functions/${APIHandler.Arn}'+alias+'/invocations'
             )
         }
 

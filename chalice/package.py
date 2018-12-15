@@ -21,7 +21,7 @@ def create_app_packager(config):
     application_builder = ApplicationGraphBuilder()
     deps_builder = DependencyBuilder()
     build_stage = create_build_stage(
-        osutils, ui, CFNSwaggerGenerator()
+        osutils, ui, CFNSwaggerGenerator(config)
     )
     resource_builder = ResourceBuilder(application_builder,
                                        deps_builder, build_stage)
