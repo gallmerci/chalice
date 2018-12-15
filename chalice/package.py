@@ -224,11 +224,20 @@ class SAMTemplateGenerator(object):
             resource.lambda_function.resource_name)
         api_handler = template['Resources'].pop(handler_cfn_name)
         template['Resources']['APIHandler'] = api_handler
+        function_name = {'Ref': 'APIHandler'}
+        if api_handler['Properties'].get('AutoPublishAlias'):
+            function_name = {
+                'Fn::Join': [
+                    ':', [
+                        {'Fn::GetAtt': ['APIHandler', 'Arn']},
+                        api_handler['Properties'].get('AutoPublishAlias')
+                    ]
+                ]
+            }
         resources['APIHandlerInvokePermission'] = {
             'Type': 'AWS::Lambda::Permission',
             'Properties': {
-                # 'FunctionName': {'Ref': 'APIHandler'},
-                'FunctionName': { 'Fn::Join': ['', [{'Fn::GetAtt': ['APIHandler', 'Arn']}, ':live']]},
+                'FunctionName': function_name,
                 'Action': 'lambda:InvokeFunction',
                 'Principal': 'apigateway.amazonaws.com',
                 'SourceArn': {
