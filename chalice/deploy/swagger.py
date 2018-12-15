@@ -243,8 +243,9 @@ class CFNSwaggerGenerator(SwaggerGenerator):
         alias = ''
         if self._config:
             deploy_preference = self._config.deployment_preference
-            if 'auto_publish_alias' in deploy_preference:
-                alias = ':' + deploy_preference['auto_publish_alias']
+            if deploy_preference:
+                if 'auto_publish_alias' in deploy_preference:
+                    alias = ':' + deploy_preference['auto_publish_alias']
         return {
             'Fn::Sub': (
                 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31'
