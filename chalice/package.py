@@ -227,7 +227,8 @@ class SAMTemplateGenerator(object):
         resources['APIHandlerInvokePermission'] = {
             'Type': 'AWS::Lambda::Permission',
             'Properties': {
-                'FunctionName': {'Ref': 'APIHandler'},
+                # 'FunctionName': {'Ref': 'APIHandler'},
+                'FunctionName': { 'Fn::Join': ['', [{'Fn::GetAtt': ['APIHandler', 'Arn']}, ':live']]},
                 'Action': 'lambda:InvokeFunction',
                 'Principal': 'apigateway.amazonaws.com',
                 'SourceArn': {
